@@ -1,23 +1,29 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Home from './views/Home.vue'
+import camelCase from 'lodash/camelCase'
 
 Vue.use(Router)
 
+const registerRouterFiles = (prePath = {}) => {
+  const requireModule = require.context('./views/', false, /\.vue$/)
+  const routes = []
+  const parsePath = name => prePath[name] ? prePath[name] : `/${name}`
+
+  requireModule.keys().forEach(filename => {
+    if (filename === './Login.vue' || filename === './NotExists.vue') return
+    const moduleName = camelCase(filename.replace(/(\.\/|\.vue)/g, ''))
+    routes.push({
+      path: `${parsePath(moduleName)}`,
+      name: moduleName,
+      component: requireModule(filename).default
+    })
+  })
+
+  return routes
+}
+
+const prePath = { 'Dashboard': '/' }
+
 export default new Router({
-  routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: Home
-    },
-    {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (about.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import(/* webpackChunkName: "about" */ './views/About.vue')
-    }
-  ]
+  routes: registerRouterFiles(prePath)
 })
